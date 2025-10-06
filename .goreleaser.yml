@@ -1,0 +1,49 @@
+# Visit https://goreleaser.com for documentation on how to customize this
+# behavior.
+---
+version: 2
+
+builds:
+  - id: binary
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: external-dns-hetzner-webhook
+    ldflags:
+      - -s
+      - -w
+      - -X {{ .ModulePath }}/internal/version.version=v{{ .Version }}
+      - -X {{ .ModulePath }}/internal/version.versionPrerelease={{- if .IsSnapshot -}}dev+{{ .ShortCommit }}{{- end -}}
+
+kos:
+  - id: container-image
+    build: binary
+    repositories:
+      - hetznercloud/external-dns-hetzner-webhook
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    base_image: alpine
+    bare: true
+    labels:
+      org.opencontainers.image.source: https://github.com/hetzner/external-dns-hetzner-webhook
+    tags:
+      - latest
+      - "{{.Tag}}"
+
+archives:
+  - id: archive
+    ids:
+      - binary
+    name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - LICENSE
+      - README.md
+
+release:
+  ids:
+    - archive

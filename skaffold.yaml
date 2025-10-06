@@ -1,0 +1,41 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: external-dns-hetzner-webhook
+build:
+  artifacts:
+    - image: docker.io/hetznercloud/external-dns-hetzner-webhook
+      ko: {}
+  local:
+    useBuildkit: true
+  insecureRegistries:
+    - localhost:30666
+
+deploy:
+  helm:
+    releases:
+      - name: external-dns
+        namespace: default
+        remoteChart: external-dns
+        repo: https://kubernetes-sigs.github.io/external-dns/
+        version: 1.15.0
+        setValueTemplates:
+          provider:
+            webhook:
+              image:
+                repository: "{{.IMAGE_REPO_docker_io_hetznercloud_external_dns_hetzner_webhook}}"
+                tag: "{{.IMAGE_TAG_docker_io_hetznercloud_external_dns_hetzner_webhook}}"
+        setValues:
+          namespace: default
+          policy: sync
+          provider:
+            name: webhook
+            webhook:
+              image:
+                pullPolicy: "Always"
+              env:
+                - name: HETZNER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: hetzner
+                      key: token

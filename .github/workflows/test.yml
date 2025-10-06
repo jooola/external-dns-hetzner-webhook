@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install test tools
+        env:
+          CRANE_VERSION: v0.20.6 # renovate: datasource=github-releases depName=google/go-containerregistry
+        run: |
+          go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+          go install github.com/google/go-containerregistry/cmd/crane@$CRANE_VERSION
+
+      - uses: hetznercloud/tps-action@main
+
+      - name: Run tests
+        run: make test-coverage
+
+      - name: upload coverage reports to codecov
+        if: >
+          !startswith(github.head_ref, 'renovate/') &&
+          !startswith(github.head_ref, 'releaser-pleaser--')
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.codecov_token }}

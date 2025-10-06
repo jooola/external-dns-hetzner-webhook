@@ -1,0 +1,6 @@
+# Tests
+/external-dns
+coverage.*
+
+# Build
+/dist

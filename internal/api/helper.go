@@ -1,0 +1,31 @@
+package api
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+)
+
+func findZoneByHostname(zones []*hcloud.Zone, hostname string) (*hcloud.Zone, error) {
+	for _, zone := range zones {
+		if strings.HasSuffix(hostname, zone.Name) {
+			return zone, nil
+		}
+	}
+
+	return nil, fmt.Errorf("could not find zone with hostname: %s", hostname)
+}
+
+func parseArrayFromEnv(env string) []string {
+	envVal := os.Getenv(env)
+	if envVal == "" {
+		return nil
+	}
+	parts := strings.Split(envVal, ",")
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+	}
+	return parts
+}
